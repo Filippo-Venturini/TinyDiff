@@ -1,39 +1,36 @@
 import torch
-import torchvision
-from torchvision import transforms
 import matplotlib.pyplot as plt
-import numpy as np
 
-def add_noise_batch(x0_batch, t, beta=0.01):
-    """
-    x0_batch: images batch [B, C, H, W]
-    t: single timestep
-    """
-    alpha = 1 - beta
-    alpha_bar = alpha ** t
-    epsilon = torch.randn_like(x0_batch)
-    print(epsilon[0])
-    xt = torch.sqrt(torch.tensor(alpha_bar)) * x0_batch + torch.sqrt(torch.tensor(1 - alpha_bar)) * epsilon
-    return xt
+from data_loader import get_mnist_dataloader
+from diffusion import add_noise_batch
+from models import SmallUNet
+from train import train
 
-transform = transforms.Compose([
-    transforms.ToTensor(),
-])
+def visualize_noisy_images():
+    loader = get_mnist_dataloader(batch_size=16)
+    batch = next(iter(loader))
+    images, _ = batch
 
-train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True)
+    timesteps = [0, 200, 400, 600, 800]
+    fig, axs = plt.subplots(len(timesteps), 8, figsize=(12, 8))
 
-batch = next(iter(train_loader))
-images, labels = batch
+    for i, t in enumerate(timesteps):
+        xt_batch, _ = add_noise_batch(images[0:8], t)
+        for j in range(8):
+            axs[i,j].imshow(xt_batch[j,0].detach().numpy(), cmap='gray')
+            axs[i,j].axis('off')
+        axs[i,0].set_ylabel(f"t={t}")
+    plt.show()
 
-timesteps = [0, 200, 400, 600, 800]
-fig, axs = plt.subplots(len(timesteps), 8, figsize=(12, 8))
+def test_model_forward():
+    model = SmallUNet()
+    loader = get_mnist_dataloader(batch_size=8)
+    batch = next(iter(loader))
+    images, _ = batch
+    timesteps = torch.randint(0, 1000, (images.shape[0],))
+    x_t, _ = add_noise_batch(images, timesteps[0].item())  # using same t for simplicity
+    epsilon_pred = model(x_t, timesteps)
+    print(epsilon_pred.shape)
 
-for i, t in enumerate(timesteps):
-    xt_batch = add_noise_batch(images[0:8], t)
-    for j in range(8):
-        axs[i,j].imshow(xt_batch[j,0].detach().numpy(), cmap='gray')
-        axs[i,j].axis('off')
-    axs[i,0].set_ylabel(f"t={t}")
-plt.show()
-
+if __name__ == "__main__":
+    model = train(epochs=3, batch_size=16)
