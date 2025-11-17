@@ -184,3 +184,6 @@ pip-selfcheck.json
 
 ### dataset ###
 data/
+
+### models ###
+models/
