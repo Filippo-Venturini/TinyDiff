@@ -50,4 +50,7 @@ def train(
 
         print(f"Epoch {epoch+1}/{epochs} - Loss: {loss.item():.4f}")
 
+    print("Training complete, saving model...")
+    torch.save(model.state_dict(), "model.pt")
+
     return model

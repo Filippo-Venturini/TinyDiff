@@ -5,6 +5,10 @@ from data_loader import get_mnist_dataloader
 from diffusion import add_noise_batch
 from models import SmallUNet
 from train import train
+from sampler import sample
+from utils import load_model
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def visualize_noisy_images():
     loader = get_mnist_dataloader(batch_size=16)
@@ -15,22 +19,43 @@ def visualize_noisy_images():
     fig, axs = plt.subplots(len(timesteps), 8, figsize=(12, 8))
 
     for i, t in enumerate(timesteps):
-        xt_batch, _ = add_noise_batch(images[0:8], t)
+        xt_batch, _ = add_noise_batch(images[0:8], torch.tensor([t]*8), beta=0.01)
         for j in range(8):
-            axs[i,j].imshow(xt_batch[j,0].detach().numpy(), cmap='gray')
-            axs[i,j].axis('off')
-        axs[i,0].set_ylabel(f"t={t}")
+            axs[i, j].imshow(xt_batch[j, 0].detach().numpy(), cmap='gray')
+            axs[i, j].axis('off')
+        axs[i, 0].set_ylabel(f"t={t}")
     plt.show()
 
 def test_model_forward():
-    model = SmallUNet()
+    model = SmallUNet().to(device)
     loader = get_mnist_dataloader(batch_size=8)
     batch = next(iter(loader))
     images, _ = batch
-    timesteps = torch.randint(0, 1000, (images.shape[0],))
-    x_t, _ = add_noise_batch(images, timesteps[0].item())  # using same t for simplicity
+    images = images.to(device)
+    timesteps = torch.randint(0, 1000, (images.shape[0],), device=device)
+    x_t, _ = add_noise_batch(images, timesteps)
     epsilon_pred = model(x_t, timesteps)
-    print(epsilon_pred.shape)
+    print("Forward pass output shape:", epsilon_pred.shape)
+
+def generate_samples(model_path="model.pt", num_samples=16, img_size=28):
+    model = load_model(model_path, device=device)
+    samples = sample(model, num_samples=num_samples, img_size=img_size, device=device)
+
+    fig, axs = plt.subplots(4, 4, figsize=(6, 6))
+    for i in range(num_samples):
+        axs[i // 4, i % 4].imshow(samples[i, 0].cpu().numpy(), cmap="gray")
+        axs[i // 4, i % 4].axis("off")
+    plt.show()
 
 if __name__ == "__main__":
-    model = train(epochs=3, batch_size=16)
+    # Train the model (weights will be saved automatically)
+    #model = train(epochs=3, batch_size=16)
+
+    # Optional: visualize noisy images at different timesteps
+    #visualize_noisy_images()
+
+    # Optional: test a forward pass
+    #test_model_forward()
+
+    # Generate new MNIST samples using the trained model
+    generate_samples("model.pt", num_samples=16, img_size=28)
