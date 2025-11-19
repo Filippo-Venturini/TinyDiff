@@ -1,20 +1,32 @@
+# diffusion.py
 import torch
 
-def add_noise_batch(x0_batch, t, beta=0.01):
+def make_beta_schedule(T, beta_start=1e-4, beta_end=0.02, device="cpu"):
     """
-    x0_batch: [B, C, H, W]
-    t:        [B] timesteps
+    Linear beta schedule from beta_start to beta_end with T timesteps.
+    Returns beta (T,), alpha (T,), alpha_cumprod (T,)
+    """
+    betas = torch.linspace(beta_start, beta_end, T, device=device)  # shape [T]
+    alphas = 1.0 - betas  # [T]
+    alpha_cumprod = torch.cumprod(alphas, dim=0)  # [T]
+    return betas, alphas, alpha_cumprod
+
+def add_noise_batch(x0_batch, t, alpha_cumprod):
+    """
+    x0_batch: [B, C, H, W], values in [0,1] (or normalized)
+    t:        [B] timesteps in [0, T-1] (long tensor)
+    alpha_cumprod: [T] tensor precomputed (alpha_1 * ... * alpha_t)
+    returns: xt, epsilon (both same shape as x0_batch)
     """
     B = x0_batch.shape[0]
+    device = x0_batch.device
 
-    alpha = 1 - beta
-    alpha_bar = alpha ** t   # [B]
+    # gather alpha_bar for each example in batch
+    # alpha_cumprod[t] -> [B], then reshape for broadcasting
+    a_bar = alpha_cumprod[t].view(B, 1, 1, 1)  # [B,1,1,1]
 
     epsilon = torch.randn_like(x0_batch)
 
-    # reshape alpha_bar for broadcasting
-    alpha_bar = alpha_bar.view(B, 1, 1, 1)
-
-    xt = torch.sqrt(alpha_bar) * x0_batch + torch.sqrt(1 - alpha_bar) * epsilon
+    xt = torch.sqrt(a_bar) * x0_batch + torch.sqrt(1.0 - a_bar) * epsilon
 
     return xt, epsilon
