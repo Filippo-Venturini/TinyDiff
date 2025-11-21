@@ -1,5 +1,5 @@
-# diffusion.py
 import torch
+import math
 
 def make_beta_schedule(T, beta_start=1e-4, beta_end=0.02, device="cpu"):
     """
@@ -10,6 +10,21 @@ def make_beta_schedule(T, beta_start=1e-4, beta_end=0.02, device="cpu"):
     alphas = 1.0 - betas  # [T]
     alpha_cumprod = torch.cumprod(alphas, dim=0)  # [T]
     return betas, alphas, alpha_cumprod
+
+def sinusoidal_embedding(timesteps, dim):
+    """
+    timesteps: [B] int tensor
+    dim: dimension of the embedding
+    returns: [B, dim] float tensor
+    """
+    B = timesteps.shape[0]
+    device = timesteps.device
+    half_dim = dim // 2
+    emb = math.log(10000) / (half_dim - 1)
+    emb = torch.exp(torch.arange(half_dim, device=device) * -emb)  # [half_dim]
+    emb = timesteps[:, None].float() * emb[None, :]               # [B, half_dim]
+    emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)      # [B, dim]
+    return emb
 
 def add_noise_batch(x0_batch, t, alpha_cumprod):
     """
