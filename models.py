@@ -33,13 +33,18 @@ class SmallUNet(nn.Module):
         scale = scale[:,:,None,None]
         shift = shift[:,:,None,None]  # [B, hidden_dim, 1, 1]
         
-        h = self.conv1(x)
-        h = h * scale + shift
-        h = self.relu1(h)
+         # --- first block ---
+        h1 = self.conv1(x)
+        h1 = h1 * scale + shift
+        h1 = self.relu1(h1)
 
-        h = self.conv2(h)
-        h = h * scale + shift
-        h = self.relu2(h)
+        # --- second block ---
+        h2 = self.conv2(h1)
+        h2 = h2 * scale + shift
+        h2 = h2 = self.relu2(h2)
+
+        # --- skip connection ---
+        h = h1 + h2
 
         out = self.conv_out(h)
         return out

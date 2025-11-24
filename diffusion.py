@@ -17,7 +17,6 @@ def sinusoidal_embedding(timesteps, dim):
     dim: dimension of the embedding
     returns: [B, dim] float tensor
     """
-    B = timesteps.shape[0]
     device = timesteps.device
     half_dim = dim // 2
     emb = math.log(10000) / (half_dim - 1)
