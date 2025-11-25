@@ -3,83 +3,83 @@ import torch.nn as nn
 from diffusion import sinusoidal_embedding
 
 class DownBlock(nn.Module):
-    def __init__(self, in_ch, out_ch, hidden_dim):
+    def __init__(self, in_ch, out_ch, t_dim):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=2, padding=1)  # downsample
-        self.relu = nn.ReLU()
-        self.mlp = nn.Linear(hidden_dim, out_ch*2)  # timestep embedding
+        self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
+        self.conv2 = nn.Conv2d(out_ch, out_ch, 3, stride=2, padding=1)
+        self.act = nn.ReLU()
+        self.mlp = nn.Linear(t_dim, out_ch*2)
 
     def forward(self, x, t_emb):
-        scale_shift = self.mlp(t_emb).chunk(2, dim=1)
-        scale, shift = [s[:,:,None,None] for s in scale_shift]
+        scale, shift = self.mlp(t_emb).chunk(2, dim=1)
+        scale = scale[:, :, None, None]
+        shift = shift[:, :, None, None]
 
-        h = self.conv1(x)
+        h = self.act(self.conv1(x))
         h = h * scale + shift
-        h = self.relu(h)
-
-        h_down = self.conv2(h)
+        h_down = self.act(self.conv2(h))
         h_down = h_down * scale + shift
-        h_down = self.relu(h_down)
-
-        return h_down, h  # downsampled + skip connection
+        return h_down, h
 
 class UpBlock(nn.Module):
-    def __init__(self, in_ch, skip_ch, out_ch, hidden_dim):
+    def __init__(self, in_ch, skip_ch, out_ch, t_dim):
         super().__init__()
-        self.conv_trans = nn.ConvTranspose2d(in_ch, out_ch, kernel_size=4, stride=2, padding=1)
-        self.conv_fuse = nn.Conv2d(out_ch + skip_ch, out_ch, kernel_size=3, padding=1)  # fuse skip
-        self.relu = nn.ReLU()
-        self.mlp = nn.Linear(hidden_dim, out_ch*2)
+        self.up = nn.ConvTranspose2d(in_ch, out_ch, 4, stride=2, padding=1)
+        self.conv = nn.Conv2d(out_ch + skip_ch, out_ch, 3, padding=1)
+        self.act = nn.ReLU()
+        self.mlp = nn.Linear(t_dim, out_ch*2)
 
     def forward(self, x, skip, t_emb):
-        x = self.conv_trans(x)
-        x = torch.cat([x, skip], dim=1)  # concat skip connection
+        x = self.up(x)
 
-        scale_shift = self.mlp(t_emb).chunk(2, dim=1)
-        scale, shift = [s[:,:,None,None] for s in scale_shift]
+        # ensure sizes match
+        min_h = min(x.size(-2), skip.size(-2))
+        min_w = min(x.size(-1), skip.size(-1))
+        x = x[:, :, :min_h, :min_w]
+        skip = skip[:, :, :min_h, :min_w]
 
-        x = self.conv_fuse(x)
+        x = torch.cat([x, skip], dim=1)
+
+        scale, shift = self.mlp(t_emb).chunk(2, dim=1)
+        scale = scale[:, :, None, None]
+        shift = shift[:, :, None, None]
+
+        x = self.act(self.conv(x))
         x = x * scale + shift
-        x = self.relu(x)
         return x
 
 class SmallUNet(nn.Module):
-    def __init__(self, img_channels=1, hidden_dim=32, max_timestep=1000):
+    def __init__(self, img_ch=1, base_ch=32, t_dim=64):
         super().__init__()
-        self.hidden_dim = hidden_dim
-        self.max_timestep = max_timestep
 
-        # --- Down ---
-        self.down1 = DownBlock(img_channels, hidden_dim, hidden_dim)
-        self.down2 = DownBlock(hidden_dim, hidden_dim*2, hidden_dim)
+        # Downsampling
+        self.down1 = DownBlock(img_ch, base_ch, t_dim)
+        self.down2 = DownBlock(base_ch, base_ch*2, t_dim)
 
-        # --- Bottleneck ---
-        self.mid_conv = nn.Conv2d(hidden_dim*2, hidden_dim*2, kernel_size=3, padding=1)
-        self.relu_mid = nn.ReLU()
+        # Bottleneck
+        self.mid = nn.Sequential(
+            nn.Conv2d(base_ch*2, base_ch*2, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(base_ch*2, base_ch*2, 3, padding=1),
+            nn.ReLU()
+        )
 
-        # --- Up ---
-        self.up2 = UpBlock(in_ch=hidden_dim*2, skip_ch=hidden_dim*2, out_ch=hidden_dim, hidden_dim=hidden_dim)
-        self.up1 = UpBlock(in_ch=hidden_dim, skip_ch=hidden_dim, out_ch=hidden_dim, hidden_dim=hidden_dim)
+        # Upsampling
+        self.up2 = UpBlock(base_ch*2, base_ch*2, base_ch, t_dim)
+        self.up1 = UpBlock(base_ch, base_ch, base_ch, t_dim)
 
-        # --- Output ---
-        self.conv_out = nn.Conv2d(hidden_dim, img_channels, kernel_size=3, padding=1)
+        # Output
+        self.final = nn.Conv2d(base_ch, img_ch, 3, padding=1)
 
     def forward(self, x, t):
-        t_emb = sinusoidal_embedding(t, self.hidden_dim)
+        t_emb = sinusoidal_embedding(t, dim=64)
 
-        # --- Down ---
-        d1, skip1 = self.down1(x, t_emb)
-        d2, skip2 = self.down2(d1, t_emb)
+        d1, h1 = self.down1(x, t_emb)
+        d2, h2 = self.down2(d1, t_emb)
 
-        # --- Bottleneck ---
-        h = self.mid_conv(d2)
-        h = self.relu_mid(h)
+        h = self.mid(d2)
 
-        # --- Up ---
-        h = self.up2(h, skip2, t_emb)
-        h = self.up1(h, skip1, t_emb)
+        h = self.up2(h, h2, t_emb)
+        h = self.up1(h, h1, t_emb)
 
-        # --- Output ---
-        out = self.conv_out(h)
-        return out
+        return self.final(h)

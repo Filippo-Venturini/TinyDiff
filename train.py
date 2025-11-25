@@ -15,7 +15,7 @@ def train(
     print_interval=100,  
     model_name="model_test.pt"     
 ):
-    model = SmallUNet(max_timestep=max_timestep).to(device)
+    model = SmallUNet().to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.MSELoss()
 
