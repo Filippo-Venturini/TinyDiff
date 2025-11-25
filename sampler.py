@@ -19,13 +19,17 @@ def sample(model, num_samples, img_size, max_timestep=1000, beta_start=1e-4, bet
         eps_pred = model(x_t, t_tensor)
 
         a_bar_t = alpha_cumprod[t].view(1,1,1,1)
-        a_bar_prev = alpha_cumprod[t-1].view(1,1,1,1) if t-1 >= 0 else torch.tensor(1.0, device=device).view(1,1,1,1)
 
         # Predict x_0 using the DDPM formula
         x_0_pred = (x_t - torch.sqrt(1 - a_bar_t) * eps_pred) / torch.sqrt(a_bar_t)
 
-        # Compute mean of q(x_{t-1} | x_t, x_0)
-        mean = torch.sqrt(a_bar_prev) * x_0_pred + torch.sqrt(1 - a_bar_prev) * eps_pred
+        beta_t = betas[t]
+        alpha_t = alphas[t]
+        alpha_bar_t = alpha_cumprod[t]
+
+        mean = (1 / torch.sqrt(alpha_t)) * (
+            x_t - (beta_t / torch.sqrt(1 - alpha_bar_t)) * eps_pred
+        )
 
         # Sample noise if not final step
         if t > 1:
