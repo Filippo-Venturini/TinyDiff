@@ -39,6 +39,7 @@ def sample(model, num_samples, img_size, max_timestep=1000, beta_start=1e-4, bet
             x_t = x_0_pred  # last step, no noise
 
     # Clamp output to [0,1] for greyscale images
-    x_t = x_t.clamp(0.0, 1.0)
+    x_t = (x_t + 1) / 2
+    x_t = x_t.clamp(0, 1)
 
     return x_t

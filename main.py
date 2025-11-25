@@ -53,7 +53,7 @@ def generate_samples(model_path="model.pt", num_samples=16, img_size=28):
 
 if __name__ == "__main__":
     # Train the model (weights will be saved automatically)
-    #model = train(model_name="model_v6_unet.pt")
+    #model = train(model_name="model_v7.pt")
 
     # Optional: visualize noisy images at different timesteps
     #visualize_noisy_images()
@@ -62,4 +62,4 @@ if __name__ == "__main__":
     #test_model_forward()
 
     # Generate new MNIST samples using the trained model
-    generate_samples("models/model_v6_unet.pt")
+    generate_samples("models/model_v7.pt")
