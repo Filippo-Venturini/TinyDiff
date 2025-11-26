@@ -3,7 +3,6 @@ import torch
 from train import train
 from sampler import sample
 from utils import load_model
-from data_loader import get_mnist_dataloader
 import matplotlib.pyplot as plt
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

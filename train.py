@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from diffusion import add_noise_batch, make_beta_schedule
-from data_loader import get_mnist_dataloader
+from data_loader import get_mnist_dataloader, get_fashion_mnist_dataloader
 from models import SmallUNet
 from utils import save_model
 
@@ -20,7 +20,7 @@ def train(
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.MSELoss()
 
-    dataloader = get_mnist_dataloader(batch_size=batch_size)
+    dataloader = get_fashion_mnist_dataloader(batch_size=batch_size)
 
     _, _, alpha_cumprod = make_beta_schedule(max_timestep, beta_start=1e-4, beta_end=0.02, device=device)
 
