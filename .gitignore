@@ -184,3 +184,5 @@ pip-selfcheck.json
 
 ### dataset ###
 data/
+
+.vscode/
