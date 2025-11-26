@@ -5,6 +5,7 @@ import torch.optim as optim
 from diffusion import add_noise_batch, make_beta_schedule
 from data_loader import get_mnist_dataloader
 from models import SmallUNet
+from utils import save_model
 
 def train(
     epochs=20,               
@@ -61,6 +62,6 @@ def train(
         print(f"Epoch {epoch+1}/{epochs} completed. Last batch loss: {loss.item():.4f}")
 
     print("Training complete, saving model...")
-    torch.save(model.state_dict(), model_name)
+    save_model(model, model_name)
 
     return model
