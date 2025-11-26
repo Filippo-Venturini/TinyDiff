@@ -68,9 +68,65 @@ This produces the first fully clean, coherent digits — the transition from noi
 
 ---
 
-## Next Steps
+## How to Run the Project
 
-Here’s a concise, minimal version of the “Next Steps” paragraph:
+TinyDiff provides a unified command-line interface (`main.py`) to run both training and sampling pipelines. The project is designed to be immediately runnable upon cloning.
+
+### Prerequisites
+
+Install the required Python packages:
+
+```bash
+pip install -r requirements.txt
+````
+
+---
+
+### Training a New Model
+
+You can train a new diffusion model on MNIST as follows:
+
+```bash
+python main.py train \
+    --epochs 50 \
+    --batch_size 128 \
+    --lr 1e-4 \
+    --model_name models/model_v8.pt \
+    --max_timestep 1000
+```
+
+**Arguments**:
+
+* `--epochs`: Number of training epochs.
+* `--batch_size`: Mini-batch size.
+* `--lr`: Learning rate for the optimizer.
+* `--model_name`: File path to save the trained model.
+* `--max_timestep`: Number of timesteps in the diffusion process.
+
+Trained model weights will automatically be saved in the specified path.
+
+---
+
+### Sampling from a Pretrained Model
+
+Generate new MNIST-like digits using a pretrained model:
+
+```bash
+python main.py sample \
+    --model_path models/model_v8.pt \
+    --num_samples 16 \
+    --img_size 28 \
+    --max_timestep 1000
+```
+
+**Arguments**:
+
+* `--model_path`: Path to the pretrained model file.
+* `--num_samples`: Number of images to generate.
+* `--img_size`: Width and height of generated images.
+* `--max_timestep`: Number of diffusion timesteps used during sampling.
+
+Generated images will be displayed in a grid using Matplotlib.
 
 ---
 
