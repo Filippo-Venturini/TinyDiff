@@ -1,6 +1,6 @@
 import torch
 import os
-from models import SmallUNet
+from ddpm_core.models import SmallUNet
 
 def load_model(path, device="cpu"):
     if not os.path.exists(path):

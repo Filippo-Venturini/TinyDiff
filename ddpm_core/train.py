@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from diffusion import add_noise_batch, make_beta_schedule
-from data_loader import get_mnist_dataloader, get_fashion_mnist_dataloader
-from models import SmallUNet
-from utils import save_model
+from ddpm_core.diffusion import add_noise_batch, make_beta_schedule
+from ddpm_core.data_loader import get_mnist_dataloader, get_fashion_mnist_dataloader
+from ddpm_core.models import SmallUNet
+from ddpm_core.utils import save_model
 
 def train(
     epochs=20,               

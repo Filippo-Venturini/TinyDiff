@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from diffusion import make_beta_schedule
+from ddpm_core.diffusion import make_beta_schedule
 
 @torch.no_grad()
 def sample(model, num_samples, img_size, max_timestep=1000, beta_start=1e-4, beta_end=0.02, device="cpu"):

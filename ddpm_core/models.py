@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from diffusion import sinusoidal_embedding
+from ddpm_core.diffusion import sinusoidal_embedding
 
 class DownBlock(nn.Module):
     def __init__(self, in_ch, out_ch, t_dim):

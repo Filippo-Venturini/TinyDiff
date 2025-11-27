@@ -1,8 +1,8 @@
 import argparse
 import torch
-from train import train
-from sampler import sample
-from utils import load_model
+from ddpm_core.train import train
+from ddpm_core.sampler import sample
+from ddpm_core.utils import load_model
 import matplotlib.pyplot as plt
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
