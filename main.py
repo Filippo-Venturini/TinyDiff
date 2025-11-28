@@ -5,10 +5,9 @@ from ddpm_core.sampler import sample
 from ddpm_core.utils import load_model, load_model_text
 import matplotlib.pyplot as plt
 from ddpm_text.train_text import train_text
-from ddpm_core.utils import load_model
+from ddpm_core.utils import load_model, load_text_encoder
 from ddpm_text.sample_text import sample_text
 from ddpm_text.tokenizer import SimpleTokenizer
-from ddpm_text.text_encoder import SimpleTextEncoder
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -22,11 +21,11 @@ def generate_samples(model_path, num_samples=16, img_size=28, max_timestep=1000)
         axs[i // 4, i % 4].axis("off")
     plt.show()
 
-def generate_samples_text(model_path, text, num_samples=16, img_size=28, max_timestep=1000):
+def generate_samples_text(model_path, encoder_path, text, num_samples=16, img_size=28, max_timestep=1000):
     model = load_model_text(model_path, device=device)
 
     tokenizer = SimpleTokenizer()
-    text_encoder = SimpleTextEncoder(vocab_size=tokenizer.max_len, token_emb_dim=64).to(device)
+    text_encoder = load_text_encoder(encoder_path)
     
     texts = [text] * num_samples
     token_ids = torch.tensor([tokenizer.encode(t) for t in texts], device=device)
@@ -77,6 +76,7 @@ if __name__ == "__main__":
     # SAMPLE text-conditioned
     sample_text_parser = subparsers.add_parser("sample_text", help="Generate samples from a text-conditioned trained model")
     sample_text_parser.add_argument("--model_path", type=str, required=True)
+    sample_text_parser.add_argument("--encoder_path", type=str, required=True)
     sample_text_parser.add_argument("--text", type=str, required=True)
     sample_text_parser.add_argument("--num_samples", type=int, default=16)
     sample_text_parser.add_argument("--img_size", type=int, default=28)
@@ -111,6 +111,7 @@ if __name__ == "__main__":
     elif args.command == "sample_text":
         generate_samples_text(
             model_path=args.model_path,
+            encoder_path=args.encoder_path,
             text=args.text,
             num_samples=args.num_samples,
             img_size=args.img_size,
