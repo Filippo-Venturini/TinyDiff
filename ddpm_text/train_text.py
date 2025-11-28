@@ -34,7 +34,7 @@ def train_text(
 ):
     dataloader = get_fashion_mnist_dataloader(batch_size=batch_size, train=True)
     tokenizer = SimpleTokenizer(max_len=1)
-    text_encoder = SimpleTextEncoder(vocab_size=len(label_to_text)+2, token_emb_dim=text_dim)
+    text_encoder = SimpleTextEncoder(vocab_size=len(label_to_text)+2, token_emb_dim=text_dim).to(device)
     model = SmallUNetText(img_ch=1, base_ch=32, t_dim=t_dim, text_dim=text_dim).to(device)
     
     optimizer = optim.Adam(list(model.parameters()) + list(text_encoder.parameters()), lr=lr)

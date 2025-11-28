@@ -8,8 +8,7 @@ class SimpleTokenizer:
 
         if vocab is None:
             words = ["t-shirt", "trouser", "pullover", "dress", "coat",
-                     "sandal", "shirt", "sneaker", "bag", "ankleboot",
-                     "shoe", "jacket", "boots", "sleeveless", "shorts"]
+                     "sandal", "shirt", "sneaker", "bag", "ankle boot"]
             vocab = [pad_token, unk_token] + words
 
         self.word2idx = {w: i for i, w in enumerate(vocab)}
