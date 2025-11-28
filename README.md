@@ -87,12 +87,7 @@ pip install -r requirements.txt
 You can train a new diffusion model on MNIST as follows:
 
 ```bash
-python main.py train \
-    --epochs 50 \
-    --batch_size 128 \
-    --lr 1e-4 \
-    --model_name models/model_v8.pt \
-    --max_timestep 1000
+python main.py train --epochs 50 --batch_size 128 --lr 1e-4 --model_name models/model_v8.pt --max_timestep 1000
 ```
 
 **Arguments**:
@@ -112,11 +107,7 @@ Trained model weights will automatically be saved in the specified path.
 Generate new MNIST-like digits using a pretrained model:
 
 ```bash
-python main.py sample \
-    --model_path models/model_v8.pt \
-    --num_samples 16 \
-    --img_size 28 \
-    --max_timestep 1000
+python main.py sample --model_path models/model_v8.pt --num_samples 16 --img_size 28 --max_timestep 1000
 ```
 
 **Arguments**:
